@@ -19,9 +19,10 @@ public class Controller {
     private static int N; // кількість точок розбиття
     private static String exactString; // Точний розв'язок
     private static String rightPartStr; // Права частина
-    private static double h; // Крок
     private static double startValue; // xo
 
+    static double lowY;
+    static double highY;
     static List<Double> X = new ArrayList<>();
     static List<Double> Y = new ArrayList<>();
     @FXML
@@ -54,9 +55,7 @@ public class Controller {
         N = Integer.parseInt(quantityOfDots.getText());
         rightPartStr = rightPartField.getText();
         startValue = Double.parseDouble(valueOfStartField.getText());
-        h = T / N;
 
-        //???????:
         if (exactSolutionField.getText().isEmpty()) {
             exactString = "0";
         } else {
@@ -64,12 +63,12 @@ public class Controller {
         }
         xAxis.setAutoRanging(false);
         yAxis.setAutoRanging(false);
-        xAxis.setLowerBound(0);
-        xAxis.setUpperBound(T);
+        xAxis.setLowerBound(0 - T / N);
+        xAxis.setUpperBound(T + T / N);
         xAxis.setTickUnit(T / N);
         yAxis.setTickUnit(T / N);
-        yAxis.setLowerBound(0);
-        yAxis.setUpperBound(4);
+        lowY = startValue;
+        highY = startValue;
     }
 
     @FXML
@@ -80,32 +79,81 @@ public class Controller {
 
     @FXML
     void eilerAndKoshiGraph() {
-
+        save();
+        XYChart.Series<Double, Double> koshiSeries = new XYChart.Series<>();
+        koshiSeries.setName("Метод Коші-Ейлера");
+        double a = 0.0;
+        X.clear();
+        Y.clear();
+        double h = (T - a) / N;
+        double x = a + h;
+        int i = 0;
+        X.add(a);
+        Y.add(startValue);
+        do {
+            koshiSeries.getData().add(new XYChart.Data<>(X.get(i), Y.get(i)));
+            double f1 = f(X.get(i), Y.get(i));
+            double f2 = f(X.get(i) + h, Y.get(i) + h * f1);
+            Y.add(Y.get(i) + h * (f1 + f2) / 2.0);
+            comparison(Y.get(i) + h * (f1 + f2) / 2.0);
+            X.add(X.get(i) + h);
+            x += h;
+            i++;
+        } while (x <= T);
+        koshiSeries.getData().add(new XYChart.Data<>(X.get(X.size() - 1), Y.get(Y.size() - 1)));
+        comparison(Y.get(Y.size() - 1));
+        lineChart.getData().addAll(koshiSeries);
     }
 
     @FXML
     void eilerGraph() {
         save();
         XYChart.Series<Double, Double> approxSeries = new XYChart.Series<>();
-        approxSeries.setName("Ейлер");
-        double[] approx = eulerMethod(0, startValue, h);
-        for (int i = 0; i <= N; i++) {
-            approxSeries.getData().add(new XYChart.Data<>(i * h, approx[i]));
-        }
-        lineChart.getData().add(approxSeries);
+        approxSeries.setName("Метод Ейлера");
+        double a = 0.0;
+        X.clear();
+        Y.clear();
+        double h = (T - a) / N;
+        double x = a + h;
+        int i = 0;
+        X.add(a);
+        Y.add(startValue);
+        do {
+            approxSeries.getData().add(new XYChart.Data<>(X.get(i), Y.get(i)));
+            X.add(X.get(i) + h);
+            Y.add(Y.get(i) + h * f(X.get(i), Y.get(i)));
+            comparison(Y.get(i) + h * f(X.get(i), Y.get(i)));
+            x += h;
+            i++;
+        } while (x <= T);
+        approxSeries.getData().add(new XYChart.Data<>(X.get(X.size() - 1), Y.get(Y.size() - 1)));
+        comparison(Y.get(Y.size() - 1));
+        lineChart.getData().addAll(approxSeries);
     }
 
     @FXML
     void exactGraph() {
-        btnEiler_Click();
-//        save();
-//        // графік точного розв'язку
-//        XYChart.Series<Double, Double> exactSeries = new XYChart.Series<>();
-//        exactSeries.setName("Графік точного розв'язку");
-//        for (int i = 0; i <= N; i++) {
-//            exactSeries.getData().add(new XYChart.Data<>(i * h, exact(i * h)));
-//        }
-//        lineChart.getData().add(exactSeries);
+        save();
+        X.clear();
+        XYChart.Series<Double, Double> exactSeries = new XYChart.Series<>();
+        exactSeries.setName("Графік точного розв'язку");
+        double a = 0.0;
+        double h = (T - a) / N;
+        double x = a + h;
+        int i = 0;
+        X.add(a);
+        Y.add(startValue);
+        do {
+            X.add(X.get(i) + h);
+            x += h;
+            i++;
+        } while (x <= T);
+
+        for (int j = 0; j < X.size(); j++) {
+            exactSeries.getData().add(new XYChart.Data<>(X.get(j), exact(X.get(j))));
+            comparison(exact(X.get(j)));
+        }
+        lineChart.getData().addAll(exactSeries);
     }
 
     // права частина диференціального рівняння
@@ -128,18 +176,15 @@ public class Controller {
         return resultRA;
     }
 
-    // реалізація методу Ейлера
-    private static double[] eulerMethod(double t0, double y0, double h) {
-        double[] y = new double[N + 1];
-        double t = t0;
-        y[0] = y0;
-
-        for (int i = 1; i <= N; i++) {
-            y[i] = y[i - 1] + h * f(t, y[i - 1]);
-            t += h;
+    private void comparison(double x) {
+        if (x > highY) {
+            highY = x;
         }
-
-        return y;
+        if (x < lowY) {
+            lowY = x;
+        }
+        yAxis.setLowerBound(lowY - startValue / 2);
+        yAxis.setUpperBound(highY + startValue / 2);
     }
 
     private void btnEiler_Click() {
@@ -152,8 +197,6 @@ public class Controller {
         double b = T;
         int n = N;
         double x0 = startValue;
-        List<Double> X = new ArrayList<>();
-        List<Double> Y = new ArrayList<>();
         double h = (b - a) / n;
         double x = a + h;
         int i = 0;
