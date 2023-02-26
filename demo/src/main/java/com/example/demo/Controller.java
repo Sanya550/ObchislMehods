@@ -186,37 +186,4 @@ public class Controller {
         yAxis.setLowerBound(lowY - startValue / 2);
         yAxis.setUpperBound(highY + startValue / 2);
     }
-
-    private void btnEiler_Click() {
-        save();
-        XYChart.Series<Double, Double> exactSeries = new XYChart.Series<>();
-        exactSeries.setName("Графік точного розв'язку");
-        XYChart.Series<Double, Double> approxSeries = new XYChart.Series<>();
-        approxSeries.setName("Ейлер");
-        double a = 0.0;
-        double b = T;
-        int n = N;
-        double x0 = startValue;
-        double h = (b - a) / n;
-        double x = a + h;
-        int i = 0;
-        X.add(a);
-        Y.add(x0);
-        do {
-            approxSeries.getData().add(new XYChart.Data<>(X.get(i), Y.get(i)));
-            X.add(X.get(i) + h);
-            Y.add(Y.get(i) + h * f(X.get(i), Y.get(i)));
-            x += h;
-            i++;
-        } while (x <= b);
-        approxSeries.getData().add(new XYChart.Data<>(X.get(X.size() - 1), Y.get(Y.size() - 1)));
-
-
-        for (int j = 0; j < X.size(); j++) {
-            exactSeries.getData().add(new XYChart.Data<>(X.get(j), exact(X.get(j))));
-        }
-        lineChart.getData().addAll(exactSeries, approxSeries);
-    }
-
-
 }
