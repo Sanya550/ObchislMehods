@@ -218,23 +218,5 @@ public class Controller {
         lineChart.getData().addAll(exactSeries, approxSeries);
     }
 
-    // метод Коші-Ейлера
-    private static double[] modifiedEulerMethod(double t0, double y0, double h) {
-        double[] y = new double[N + 1];
-        double[] z = new double[N + 1];
-        double t = t0;
-        y[0] = y0;
-        z[0] = f(t, y0);
-
-        for (int i = 1; i <= N; i++) {
-            double zp = z[i - 1] + h * f(t, y[i - 1]);
-            double yp = y[i - 1] + h * z[i - 1];
-            y[i] = y[i - 1] + h * (z[i - 1] + zp) / 2;
-            z[i] = z[i - 1] + h * (f(t, y[i - 1]) + f(t + h, yp)) / 2;
-            t += h;
-        }
-
-        return y;
-    }
 
 }
